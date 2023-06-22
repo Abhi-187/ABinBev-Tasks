@@ -1,3 +1,9 @@
+##TO automate the script every three hours we can use crontab
+## Wrie the below command in terminal
+## crontab -e
+## 0 */3 * * * /Users/abhipatel/Desktop/ABinBev/Task2/automate.py
+
+
 import time
 import pandas as pd
 from datetime import datetime
@@ -11,11 +17,10 @@ from getpass import getpass
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+import hashlib
 
 # Set the path to the Chrome WebDriver executable
 webdriver_path = "/Users/abhipatel/Desktop/ABinBev/chromedriver"
-
-
 chrome_options = Options()
 
 
@@ -28,7 +33,12 @@ def initialize_driver():
 
 
 def login(driver, username, password):
-    driver.get("https://www.linkedin.com/?original_referer=")
+    target_url = "https://www.linkedin.com/?original_referer="
+
+    while driver.current_url != target_url:
+        driver.get(target_url)
+        time.sleep(1)
+
     wait = WebDriverWait(driver, 20)
     username_input = wait.until(
         EC.visibility_of_element_located((By.XPATH, "//input[@name='session_key']"))
@@ -70,9 +80,11 @@ def load_existing_data(excel_filename):
     return df
 
 
-def calculate_notification_diff(df, messaging_count, notification_count):
-    if not df.empty and "Message" in df.columns:
-        last_record = df.iloc[-1]
+def calculate_notification_diff(df, username, messaging_count, notification_count):
+    filtered_df = df[df["User"] == username]
+
+    if not filtered_df.empty and "Message" in filtered_df.columns:
+        last_record = filtered_df.iloc[-1]
         message_diff = int(messaging_count) - int(last_record["Message"])
         notification_diff = int(notification_count) - int(last_record["Notification"])
     else:
@@ -91,15 +103,17 @@ def append_data_to_dataframe(
     message_diff,
     notification_diff,
 ):
-    new_row = {
-        "User": username,
-        "DateTime": current_time,
-        "Message": messaging_count,
-        "Notification": notification_count,
-        "Message Difference": message_diff,
-        "Notification Difference": notification_diff,
-    }
-    df = df.append(new_row, ignore_index=True)
+    new_row = pd.DataFrame(
+        {
+            "User": [username],
+            "DateTime": [current_time],
+            "Message": [messaging_count],
+            "Notification": [notification_count],
+            "Message Difference": [message_diff],
+            "Notification Difference": [notification_diff],
+        }
+    )
+    df = pd.concat([df, new_row], ignore_index=True)
     return df
 
 
@@ -133,7 +147,7 @@ def send_email(
     # Connect to the email server and send the message
     with smtplib.SMTP("smtp.gmail.com", 587) as server:
         server.starttls()
-        server.login("test2abinbev@gmail.com", "Abhi@187")
+        server.login("test2abinbev@gmail.com", "qeapjpolqeqnshao")
         server.sendmail(sender_email, receiver_email, message.as_string())
 
 
@@ -179,6 +193,12 @@ def create_email_body(
             th {{
                 font-weight: bold;
             }}
+            .footer {{
+                color: #999;
+                font-size: 14px;
+                text-align: center;
+                margin-top: 20px;
+            }}
         </style>
     </head>
     <body>
@@ -209,11 +229,18 @@ def create_email_body(
                 </tr>
             </table>
             <p>Thank you for using our service!</p>
+            <p class="footer">Developed by Abhi Mukeshkumar Patel</p>
         </div>
     </body>
     </html>
     """
     return email_body
+
+
+def encrypt_password(password):
+    # Encrypt the password using a secure hashing algorithm (e.g., SHA-256)
+    hashed_password = hashlib.sha256(password.encode()).hexdigest()
+    return hashed_password
 
 
 # Main execution flow
@@ -243,7 +270,7 @@ def main():
 
     # Calculate notification differences
     message_diff, notification_diff = calculate_notification_diff(
-        df, messaging_count, notification_count
+        df, username, messaging_count, notification_count
     )
 
     # Append data to the DataFrame
