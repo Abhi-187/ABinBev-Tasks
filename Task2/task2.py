@@ -54,19 +54,38 @@ def login(driver, username, password):
     time.sleep(2)
 
 
+# def get_notification_counts(driver):
+#     notification_badges = WebDriverWait(driver, 20).until(
+#         EC.presence_of_all_elements_located(
+#             (By.XPATH, "//span[contains(@class, 'notification-badge__count')]")
+#         )
+#     )
+
+#     if len(notification_badges) == 4:
+#         messaging_count = notification_badges[1].text
+#         notification_count = notification_badges[2].text
+#     else:
+#         notification_count = notification_badges[2].text
+#         messaging_count = notification_badges[3].text
+
+#     return messaging_count, notification_count
+
+
 def get_notification_counts(driver):
-    notification_badges = WebDriverWait(driver, 20).until(
-        EC.presence_of_all_elements_located(
-            (By.XPATH, "//span[contains(@class, 'notification-badge__count')]")
-        )
+    messaging_count_xpath = '//*[@id="ember13"]/span/span[1]'
+    notification_count_xpath = '//*[@id="ember14"]/span/span[1]'
+
+    messaging_count = (
+        WebDriverWait(driver, 20)
+        .until(EC.presence_of_element_located((By.XPATH, messaging_count_xpath)))
+        .text
     )
 
-    if len(notification_badges) == 4:
-        messaging_count = notification_badges[1].text
-        notification_count = notification_badges[2].text
-    else:
-        notification_count = notification_badges[2].text
-        messaging_count = notification_badges[3].text
+    notification_count = (
+        WebDriverWait(driver, 20)
+        .until(EC.presence_of_element_located((By.XPATH, notification_count_xpath)))
+        .text
+    )
 
     return messaging_count, notification_count
 
