@@ -266,7 +266,7 @@ def encrypt_password(password):
 def main():
     # Get user credentials
     # username = "zealshah017@gmail.com"
-    # password = "@Kmr0507"
+    # password = "@"
 
     username = "marubackup187@gmail.com"
     password = "Abhi@187"
